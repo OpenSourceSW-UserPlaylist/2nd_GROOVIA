@@ -2,9 +2,12 @@ import csv
 import re
 import requests
 from django.http import JsonResponse
-from .csv_manager import save_song_to_csv, load_songs_from_csv  # 🔹 추가
+from csv_manager import (
+    save_song_to_csv, load_songs_from_csv,
+    save_features_to_csv, load_features_from_csv
+)
 
-# ✅ Spotify 곡 데이터 정리 (정규화 + 파싱)
+# Spotify 곡 데이터 정리 (정규화 + 파싱)
 def parse_spotify_data(track_json):
     try:
         title = re.sub(r'\s+', ' ', track_json.get('name', 'Unknown')).strip()
@@ -37,7 +40,7 @@ def parse_spotify_data(track_json):
         return None
 
 
-# ✅ Spotify 단일 곡 정보 가져오기
+# Spotify 단일 곡 정보 가져오기
 def get_spotify_track(track_id, token):
     url = f"https://api.spotify.com/v1/tracks/{track_id}"
     headers = {"Authorization": f"Bearer {token}"}
@@ -45,7 +48,7 @@ def get_spotify_track(track_id, token):
     return response.json()
 
 
-# ✅ 여러 곡 입력(최대 3곡) 처리
+# 여러 곡 입력(최대 3곡) 처리
 def get_multiple_tracks(request):
     track_ids = request.GET.get('track_ids', '')
     token = request.GET.get('token')
@@ -84,20 +87,38 @@ def get_multiple_tracks(request):
     })
 
 
-# ✅ CSV 직접 저장 (로컬 테스트용)
-def save_song(request):
-    sample = {
-        'title': 'Shape of You',
-        'artist': 'Ed Sheeran',
-        'genre': 'Pop',
-        'bpm': '96',
-        'mood': 'Happy'
-    }
-    save_song_to_csv(sample)
-    return JsonResponse({'status': 'success', 'message': '샘플 곡 저장 완료'})
+# CSV 직접 저장 (로컬 테스트용)
+#def save_song(request):
+#    sample = {
+#        'title': 'Shape of You',
+#        'artist': 'Ed Sheeran',
+#        'genre': 'Pop',
+#        'bpm': '96',
+#        'mood': 'Happy'
+#    }
+#    save_song_to_csv(sample)
+#    return JsonResponse({'status': 'success', 'message': '샘플 곡 저장 완료'})
 
 
-# ✅ CSV 불러오기 (전체 곡 목록 보기)
+# CSV 불러오기 (전체 곡 목록 보기)
 def get_songs(request):
     data = load_songs_from_csv()
     return JsonResponse({'status': 'success', 'count': len(data), 'songs': data})
+
+#if __name__ == "__main__":
+#    print("--- 테스트 시작: save_song 함수 직접 호출 ---")
+
+    # 가짜 request 객체를 생성 (Django 없이 실행하기 위해)
+#    class MockRequest:
+#        def __init__(self, method='GET'):
+#            self.method = method
+
+    # save_song 함수 호출 시도
+#    try:
+#        response = save_song(MockRequest())
+#        print(f"save_song 실행 완료. 응답: {response.content.decode('utf-8')}")
+        # 이 시점에 songs.csv 파일이 views.py와 같은 디렉터리에 생성되어야 합니다.
+#    except Exception as e:
+#       print(f"save_song 실행 중 오류 발생: {e}")
+
+#    print("--- 테스트 종료 ---")
