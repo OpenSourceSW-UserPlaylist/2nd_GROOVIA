@@ -1,13 +1,10 @@
-
 from django.urls import path
-from .views import SpotifyLoginView, SpotifyCallbackView, SpotifySearchView, PingSpotifyView
-from .views import PingView   # 너가 만든 PingView 또는 API View
+from .views import UrlProcessView, AppleRecommendView
 
 urlpatterns = [
-    path('login', SpotifyLoginView.as_view(), name='spotify_login'),
-    path('callback', SpotifyCallbackView.as_view(), name='spotify_callback'),
-    path('search', SpotifySearchView.as_view(), name='spotify_search'),
-    path('ping-spotify', PingSpotifyView.as_view(), name='ping_spotify'),
-    path('ping/', PingView.as_view(), name='spotify-ping'),
-]
+    # A 모드: Flutter URL → track_id → 추천
+    path('process-urls/', UrlProcessView.as_view(), name='process_urls'),
 
+    # B 모드: 브라우저 GET 테스트용 (기본 3곡 자동 추천)
+    path('apple-test/', AppleRecommendView.as_view(), name='apple_test'),
+]

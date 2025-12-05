@@ -2,7 +2,7 @@ import csv
 import re
 import requests
 from django.http import JsonResponse
-from csv_manager import (
+from .csv_manager import (
     save_song_to_csv, load_songs_from_csv,
     save_features_to_csv, load_features_from_csv
 )
@@ -104,21 +104,3 @@ def get_multiple_tracks(request):
 def get_songs(request):
     data = load_songs_from_csv()
     return JsonResponse({'status': 'success', 'count': len(data), 'songs': data})
-
-#if __name__ == "__main__":
-#    print("--- 테스트 시작: save_song 함수 직접 호출 ---")
-
-    # 가짜 request 객체를 생성 (Django 없이 실행하기 위해)
-#    class MockRequest:
-#        def __init__(self, method='GET'):
-#            self.method = method
-
-    # save_song 함수 호출 시도
-#    try:
-#        response = save_song(MockRequest())
-#        print(f"save_song 실행 완료. 응답: {response.content.decode('utf-8')}")
-        # 이 시점에 songs.csv 파일이 views.py와 같은 디렉터리에 생성되어야 합니다.
-#    except Exception as e:
-#       print(f"save_song 실행 중 오류 발생: {e}")
-
-#    print("--- 테스트 종료 ---")

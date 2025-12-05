@@ -1,0 +1,64 @@
+# =========================
+# Django & Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+*.log
+
+# 프로젝트 루트에 있는 DB 파일
+db.sqlite3
+
+# 환경 변수 파일
+.env
+.env.*
+
+# venv (일반적인 이름 전부 커버)
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# =========================
+# OS / IDE
+# =========================
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# VSCode
+.vscode/
+
+# PyCharm / IntelliJ
+.idea/
+
+# =========================
+# Django Static / Media
+# =========================
+staticfiles/
+static/
+media/
+
+# =========================
+# SSL / Keys / Secrets
+# =========================
+*.crt
+*.key
+
+# =========================
+# 기타 캐시 / 임시 파일
+# =========================
+temp/
+tmp/
+*.zip
+apple_vectors.npy
+apple_metadata.json
+experiment_results_export.csv
