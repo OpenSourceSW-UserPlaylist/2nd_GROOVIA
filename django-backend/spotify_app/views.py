@@ -1,54 +1,239 @@
-import os, requests
-from django.shortcuts import redirect
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .spotify_client import get_audio_features
-from dotenv import load_dotenv
 
+from spotify_app.services.recommendation_service import run_recommendation
+from spotify_app.services.apple_client import get_track_id_by_name, parse_artist_title_list
+
+from dotenv import load_dotenv
+from django.conf import settings
 
 load_dotenv()
 
-CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
-CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
-REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI")
+# ============================================================
+# 모드 스위치
+# ============================================================
+ACTIVAE_MODE = getattr(settings, "ACTIVAE_MODE", "A")   
+# 기본값 A(Flutter POST 모드) / B(브라우저 테스트 모드)
 
-class SpotifyLoginView(APIView):
+
+
+# ============================================================
+# B 모드: runserver + 브라우저 GET → 자동 추천 실행 (테스트용)
+# ============================================================
+class AppleRecommendView(APIView):
+    """
+    테스트용:
+    - runserver 후 /api/spotify/apple-test/ 접속하면
+      기본 track_id 3개로 자동 추천 실행
+    """
     def get(self, request):
-        scope = "user-read-private user-read-email"
-        auth_url = (
-            "https://accounts.spotify.com/authorize"
-            f"?client_id={CLIENT_ID}"
-            "&response_type=code"
-            f"&redirect_uri={REDIRECT_URI}"
-            f"&scope={scope}"
-        )
-        return redirect(auth_url)
+
+        # 테스트용 기본 sample 3개
+        sample = [
+            ["NewJeans", "Super Shy"],
+            ["The Weeknd", "Blinding Lights"],
+            ["Coldplay", "Hymn For The Weekend"]
+        ]
+
+        # ================================
+        # 1. 곡명 + 아티스트명 → trackId 변환
+        # ================================
+        track_ids = []
+        for artist, title in sample:
+            term = f"{artist} {title}"
+            tid = get_track_id_by_name(term)
+            if tid:
+                track_ids.append(tid)
+
+        if not track_ids:
+            return Response(
+                {"error": "기본 테스트 곡들의 trackId 검색 실패"},
+                status=400
+            )
+
+        # ================
+        # 2. 추천 로직 실행
+        # ================
+        results, mood_keywords = run_recommendation(track_ids)
+
+        return Response({
+            "message": "Apple 테스트 추천 실행 완료",
+            "input_ids": sample,
+            "mood_keywords": mood_keywords,
+            "recommended": results
+        })
+
+    def post(self, request):
+        return Response({
+            "error": "이 URL은 GET 테스트용입니다. POST가 아닙니다."
+        }, status=405)
+        
 
 
-class SpotifyCallbackView(APIView):
+
+# ============================================================
+# A 모드: Flutter POST → URL 목록 → track_id 추출 → 추천
+# ============================================================
+class UrlProcessView(APIView):
+    """
+    Flutter에서 여러 URL을 받아
+    - Spotify / Apple Music URL → track_id 추출
+    - Apple 추천 알고리즘 실행
+    """
     def get(self, request):
-        code = request.GET.get("code")
-        if not code:
-            return Response({"error": "Missing code"}, status=400)
+        return Response({"msg": "GET received. 이 Endpoint는 POST용입니다."})
 
-        token_url = "https://accounts.spotify.com/api/token"
-        data = {
-            "grant_type": "authorization_code",
-            "code": code,
-            "redirect_uri": REDIRECT_URI,
-            "client_id": CLIENT_ID,
-            "client_secret": CLIENT_SECRET,
-        }
-        r = requests.post(token_url, data=data)
-        r.raise_for_status()
-        tokens = r.json()
+    def post(self, request):
 
-        # access_token과 refresh_token 반환
-        return Response(tokens)
+        # A 모드에서만 실행
+        if ACTIVAE_MODE != "A":
+            return Response(
+                {"error": "현재 모드는 A(Flutter POST 모드)가 아닙니다."},
+                status=400
+            )
+
+        input_info = request.data.get("urls", [])
+
+        if not input_info:
+            return Response(
+                {"error": "URL 리스트가 비어있습니다."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # ---------------------------------------------------
+        # 1) 입력 문자열 parsing -> ["아티스트", "제목"] 형태로 전환
+        # ---------------------------------------------------
+        parsed_track_info = parse_artist_title_list(input_info)
 
 
-class SpotifySearchView(APIView):
+        # ---------------------------------------------------
+        # 2) track_id 추출 단계
+        # ---------------------------------------------------
+        track_ids = []
+        for artist, title in parsed_track_info:
+            term = f"{artist} {title}"
+            tid = get_track_id_by_name(term)
+            if tid:
+                track_ids.append(tid)
+
+        if not track_ids:
+            return Response(
+                {"error": "기본 테스트 곡들의 trackId 검색 실패"},
+                status=400
+            )
+        
+
+        # ---------------------------------------------------
+        # 3) Apple 추천 실행
+        # ---------------------------------------------------
+        try:
+            results, mood_keywords = run_recommendation(track_ids)
+        except Exception as e:
+            return Response(
+                {"error": f"추천 실행 중 오류 발생: {str(e)}"},
+                status=500
+            )
+
+
+        # ---------------------------------------------------
+        # 4) AppleRecommendView와 동일한 JSON 구조로 반환
+        # ---------------------------------------------------
+        return Response({
+            "message": "Apple 테스트 추천 실행 완료",   
+            "input_ids": track_ids,
+            "mood_keywords": mood_keywords,
+            "recommended": results
+        })
+
+
+
+# ============================================================
+# PingView (기본 연결 확인용)
+# ============================================================
+class PingView(APIView):
+    def get(self, request):
+        return Response({
+            "message": "pong",
+            "mode": ACTIVAE_MODE  # 현재 모드 알려주기
+        })
+# ========================================================= #
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ========================================================= #
+# FeatureExtractView: 미사용
+'''
+class FeatureExtractView(APIView): #for test
+    """ 기본 Mega Extractor """
+    def get(self, request):
+        token = request.GET.get("token")
+        track_id = request.GET.get("track_id")
+
+        metadata = get_track_metadata(track_id, token)
+        features = extract_features(metadata)
+
+        return Response({
+            "success": True,
+            "mode": "basic",
+            "features": features
+        })
+'''
+
+# RecommendView: 미사용
+'''
+class RecommendView(APIView): #for test
+    """
+    MultiTrackFeatureExtractView 결과(JSON)를 입력받아
+    Annoy 기반 추천 10곡 반환
+    """
+
+    def post(self, request):
+        tracks = request.data.get("tracks", [])
+
+        if len(tracks) == 0:
+            return Response({"error": "tracks missing"}, status=400)
+
+        user_vectors = []
+
+        try:
+            for track in tracks:
+                nf = track["features"]["numeric_vector"]
+                gf = track["features"]["genre_vector"]
+                vector = nf + gf
+                user_vectors.append(vector)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
+
+        # Annoy 추천 실행
+        rec = AnnoyRecommender()
+        recommended_ids = rec.recommend_top_k(user_vectors, k=10)
+
+        return Response({
+            "success": True,
+            "mode": "embedding",
+            "features": features
+            "recommended_track_ids": recommended_ids,
+            "count": len(recommended_ids)
+        })
+'''
+
+# RecommendView: 미사용 (검색 결과 필요 시 사용)
+'''
+class SpotifySearchView(APIView): # Spotify 곡 검색 결과를 Django REST API로 전달하는 엔드포인트
     def get(self, request):
         access_token = request.GET.get("token")
         query = request.GET.get("q", "IU")
@@ -60,25 +245,4 @@ class SpotifySearchView(APIView):
         r = requests.get(url, headers=headers)
         r.raise_for_status()
         return Response(r.json())
-
-class PingSpotifyView(APIView):
-    def get(self, request):
-        try:
-            track_id = "3n3Ppam7vgaVa1iaRUc9Lp"  # Uptown Funk 예시
-            features = get_audio_features(track_id)
-            return Response({
-                "message": "Spotify API reachable ✅",
-                "track_id": track_id,
-                "tempo": features.get("tempo"),
-                "energy": features.get("energy"),
-                "danceability": features.get("danceability"),
-            })
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-
-class PingView(APIView):
-    def get(self, request):
-        return Response({"message": "pong"})
-
+'''
