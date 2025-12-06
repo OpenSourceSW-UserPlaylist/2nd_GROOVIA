@@ -164,10 +164,10 @@ class HNSWRecommender:
         keywords = []
 
         # 1. 값 가져오기 (기본값 0.5)
-        tempo = features.get('tempo', 0.4)          # 가중치 0.4 (가장 중요)
-        energy = features.get('energy', 0.3)        # 가중치 0.3
-        mfcc = features.get('mfcc_mean', 0.15)       # 가중치 0.15 (음색)
-        centroid = features.get('spectral_centroid', 0.15) # 가중치 0.15 (밝기)
+        tempo = features.get('tempo', 0.5)          # 가중치 0.4 (가장 중요)
+        energy = features.get('energy', 0.5)        # 가중치 0.3
+        mfcc = features.get('mfcc_mean', 0.5)       # 가중치 0.15 (음색)
+        centroid = features.get('spectral_centroid', 0.5) # 가중치 0.15 (밝기)
 
         # 로직 A: BPM & Energy 조합 (가중치 상위 70% 차지)
     
