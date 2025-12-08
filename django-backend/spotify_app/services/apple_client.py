@@ -27,7 +27,7 @@ def fetch_apple_track_metadata(track_id: int):
     
     # 필요한 필드 변환
     meta = {
-        "genre_id": item.get("primaryGenreId", 0),
+        "genre_name": item.get("primaryGenreName", 0),
         "track_time_ms": item.get("trackTimeMillis", 0),
         "explicitness": item.get("trackExplicitness", "notExplicit"),
         "is_streamable": item.get("isStreamable", True),
@@ -53,7 +53,7 @@ def extract_features_from_audio(file_path):
     try:
         y, sr = librosa.load(file_path, sr=22050, mono=True)
     except Exception as e:
-        print("  ❌ librosa.load 실패:", e)
+        print("librosa.load 실패:", e)
         return None
 
     # Tempo
@@ -69,7 +69,7 @@ def extract_features_from_audio(file_path):
 
         # 만약 mfcc가 (13, N)이 아니면 강제로 shape 맞춤
         if mfcc.shape[0] != 13:
-            print("  ❗ MFCC shape 보정:", mfcc.shape)
+            print("MFCC shape 보정:", mfcc.shape)
             mfcc_fixed = np.zeros((13, mfcc.shape[1]))
             num = min(13, mfcc.shape[0])
             mfcc_fixed[:num, :] = mfcc[:num, :]
@@ -77,7 +77,7 @@ def extract_features_from_audio(file_path):
 
         mfcc_mean = np.mean(mfcc, axis=1)
     except Exception as e:
-        print("  ❌ MFCC 실패:", e)
+        print("MFCC 실패:", e)
         mfcc_mean = np.zeros(13)
 
     # Centroid
@@ -134,7 +134,7 @@ def extract_features_from_audio(file_path):
     ], dtype=float)
 
     if feature_vector.shape[0] != 37:
-        print("❌ vector length mismatch:", feature_vector.shape)
+        print("vector length mismatch:", feature_vector.shape)
         return None
 
     return feature_vector
@@ -179,7 +179,7 @@ def explicit_to_numeric(value: str):
 
 def build_metadata_vector(meta):
     return np.array([
-        meta["genre_id"] or 0,
+        0,
         meta["track_time_ms"] or 0,
         explicit_to_numeric(meta["explicitness"]),
         1 if meta["is_streamable"] else 0,

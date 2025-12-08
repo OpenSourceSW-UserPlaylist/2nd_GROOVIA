@@ -62,3 +62,7 @@ tmp/
 apple_vectors.npy
 apple_metadata.json
 experiment_results_export.csv
+hnsw_experiment_results.csv
+features.csv
+songs.csv
+mermaidmaker.py

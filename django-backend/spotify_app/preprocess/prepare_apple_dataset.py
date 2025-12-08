@@ -32,20 +32,110 @@ LIMIT_PER_TERM = 200
 # ======================================================
 # 검색 term 목록
 # ======================================================
-SEARCH_TERMS = []
+TERMS_US = [
 
-# 알파벳 검색 추가 (26개)
-for ch in "abcdefghijklmnopqrstuvwxyz":
-    SEARCH_TERMS.append(ch)
+    # 알파벳
+    *list("abcdefghijklmnopqrstuvwxyz"),
 
-# 2–3글자 keyword 추가
-COMMON = ["lo", "li", "he", "me", "sa", "ta"]
-SEARCH_TERMS += COMMON
+    # 2글자 조합 
+    "lo","li","le","la","lu","ly",
+    "he","hi","ha","ho","hu",
+    "me","ma","mo","mi",
+    "sa","se","si","so","su",
+    "ta","te","ti","to",
+    "ra","re","ri","ro","ru",
+    "no","ne","na","ni","nu",
+    "ki","ka","ko","ke","ku",
+    "ch","sh","th","tr","br","dr","st","sp","cl","cr",
+    "pr","pl","fr","fl","gr","gl","bl","sl","sm","sn",
+    "wh","wr","sk","sc",
 
-# 일반 영어 단어 추가
-BASIC = ["love", "you", "me", "night", "time", "life", "dream"]
-SEARCH_TERMS += BASIC
+    # 기본 영어 단어
+    "love","you","me","night","time","life","dream","day","world","home",
+    "heart","light","baby","summer","blue","star","story","again","forever",
+    "rain","sky","fire","dance","stay","run","way","high","alone","lost",
+    "back","hold","new","old","feel","right","fall","wish","true","break",
+    "moon","sun","girl","boy","with","without","never","always","happy",
 
+    # 감정/상태 단어
+    "hope","fear","pain","joy","cry","smile","tears","wild","free","cold",
+    "warm","dark","bright","deep","sweet","bad","good","better","worst",
+
+    # 자연·환경 단어
+    "ocean","sea","river","water","wind","storm","snow","ice","earth",
+    "sunset","sunrise","shadow","silver","gold","green","red","black","white",
+
+    # 행동 기반 동사
+    "listen","hear","show","make","take","move","touch","hurt","save",
+    "lose","find","stay","go","come","fly","rise","falling","running",
+]
+
+TERMS_JP = [
+
+    # 히라가나 기본 세트
+    "あ","い","う","え","お",
+    "か","き","く","け","こ",
+    "さ","し","す","せ","そ",
+    "た","ち","つ","て","と",
+    "な","に","ぬ","ね","の",
+    "は","ひ","ふ","へ","ほ",
+    "ま","み","む","め","も",
+    "や","ゆ","よ",
+    "ら","り","る","れ","ろ",
+    "わ","を","ん",
+
+    # 가타카나로도 추가
+    "ア","イ","ウ","エ","オ",
+    "カ","キ","ク","ケ","コ",
+    "サ","シ","ス","セ","ソ",
+    "タ","チ","ツ","テ","ト",
+
+    # 제목에서 매우 흔한 단어
+    "愛","恋","夢","桜","空","光","心","星",
+    "夜","海","夏","冬","雨","風","涙","花",
+    "君","僕","私","未来","希望","世界"
+]
+
+TERMS_KR = [
+
+    # 기본 자모 확장 (가-하)
+    "가","거","고","구","기","겨","교","규","길",
+    "나","너","노","누","니","녀","뉴","냐",
+    "다","더","도","두","디","대","동",
+    "라","러","로","루","리","레","료",
+    "마","머","모","무","미","매","묘",
+    "바","버","보","부","비","배",
+    "사","서","소","수","시","세","쇼",
+    "아","어","오","우","이","애","여","요","유",
+    "자","저","조","주","지","재","줘",
+    "차","처","초","추","치","채",
+    "카","커","코","쿠","키",
+    "타","터","토","투","티",
+    "파","퍼","포","푸","피",
+    "하","허","호","후","히","해","햐",
+
+    # 인기 단어 기반
+    "사랑","이별","시간","하루","밤","우리","나","너","꿈","길","마음","기억",
+    "봄","여름","가을","겨울","별","눈","하늘","비","바람","햇살","세상",
+    "빛","운명","희망","초록","그날","마지막","처음","순간",
+
+    # 감정/형용사
+    "행복","슬픔","외로움","그리움","온기","아픔",
+    "따뜻한","차가운","조용한","소중한",
+
+    # 동사 계열
+    "다시","함께","영원","돌아","떠나","기다려","웃어","울어","만나","헤어져",
+    "잊어","기억해","사라져","멈춰","달려","부서져",
+
+    # 영어 혼용 
+    "love","heart","boy","girl","dream","run","forever","light","blue","stay","fall","wish"
+]
+
+COUNTRY_TERMS = {
+    "US": TERMS_US,
+    "KR": TERMS_KR,
+    "JP": TERMS_JP
+}
 
 # ======================================================
 # 기본 유틸 함수
@@ -78,7 +168,7 @@ def search_task(args):
         return search_track_ids(term, country)
 
 # ======================================================
-# 1) Search API
+# Search API
 # ======================================================
 def search_track_ids(term, country="US"):
     params = {
@@ -94,19 +184,19 @@ def search_track_ids(term, country="US"):
             r = requests.get(SEARCH_URL, params=params, timeout=5)
             data = safe_json(r)
             if data:
-                time.sleep(0.15)
+                time.sleep(0.75)
                 return [item.get("trackId") for item in data.get("results", []) if item.get("trackId")]
         except:
             pass
 
-        time.sleep(0.15)
+        time.sleep(0.75)
 
     print(f"[Search Error] term='{term}' 실패")
     return []
 
 
 # ======================================================
-# 2) Lookup API
+# Lookup API
 # ======================================================
 def lookup_tracks_batch(track_ids):
     joined = ",".join(str(tid) for tid in track_ids)
@@ -121,7 +211,7 @@ def lookup_tracks_batch(track_ids):
         except:
             pass
 
-        time.sleep(0.05)
+        time.sleep(0.5)
 
     print("[Lookup Error] batch 조회 실패")
     return []
@@ -141,7 +231,7 @@ def build_metadata_vector(item):
         release_year = int(item["releaseDate"][:4])
 
     return [
-        item.get("primaryGenreId", 0),
+        0,   
         item.get("trackTimeMillis", 0),
         explicit_to_numeric(item.get("trackExplicitness")),
         1, 1, 1,
@@ -150,7 +240,7 @@ def build_metadata_vector(item):
 
 
 # ======================================================
-# 🔥 병렬로 실행되는 작업 함수 (가장 중요)
+# 병렬로 실행되는 작업 함수 
 # ======================================================
 def process_track(item):
     """
@@ -198,7 +288,7 @@ def process_track(item):
         "title": item.get("trackName"),
         "artist": item.get("artistName"),
         "preview_url": preview,
-        "genre_id": item.get("primaryGenreId"),
+        "genre_name": item.get("primaryGenreName"),
         "release_date": item.get("releaseDate"),
         "vector": final_vec.tolist()
     }
@@ -208,7 +298,7 @@ def process_track(item):
 # 메인 로직
 # ======================================================
 def build_apple_dataset():
-    print("\n🎵 Apple Music dataset 수집 시작...")
+    print("\nApple Music dataset 수집 시작...")
 
     # ----------------------------------------------
     # 1) Search (병렬 처리)
@@ -217,11 +307,12 @@ def build_apple_dataset():
 
     # term-country 모든 조합 생성
     tasks = []
-    for term in SEARCH_TERMS:
-        for country in COUNTRIES:
+    for country in COUNTRIES:
+        terms = COUNTRY_TERMS[country]
+        for term in terms:
             tasks.append((term, country))
 
-    print("\n🔍 Parallel Searching terms...")
+    print("\nParallel Searching terms...")
 
     all_ids = []
     with Pool(processes=max(cpu_count() // 2, 2)) as pool:
@@ -231,7 +322,7 @@ def build_apple_dataset():
         all_ids.extend(ids)
 
     unique_ids = list(set(all_ids))
-    print(f"\n🔍 trackId 후보: {len(unique_ids)} 개")
+    print(f"\ntrackId 후보: {len(unique_ids)} 개")
 
     # ----------------------------------------------
     # 2) Lookup
@@ -239,7 +330,7 @@ def build_apple_dataset():
     metadata_full = []
     batch_size = 200
 
-    print("\n📡 Running Lookup batches...")
+    print("\nRunning Lookup batches...")
 
     for i in tqdm(range(0, len(unique_ids), batch_size)):
         batch = unique_ids[i:i + batch_size]
@@ -249,15 +340,15 @@ def build_apple_dataset():
             if item.get("previewUrl") and item.get("trackId"):
                 metadata_full.append(item)
 
-    print(f"\n🎧 previewUrl 존재하는 곡: {len(metadata_full)} 개")
+    print(f"\npreviewUrl 존재하는 곡: {len(metadata_full)} 개")
 
     # ----------------------------------------------
-    # 🔥 3) 병렬 Feature Extraction
+    # 3) 병렬 Feature Extraction
     # ----------------------------------------------
-    print("\n🎧 Extracting audio features (Parallel)...")
+    print("\nExtracting audio features (Parallel)...")
 
     num_workers = max(cpu_count() - 1, 2)
-    print(f"🧵 병렬 프로세스: {num_workers} core(s)")
+    print(f"병렬 프로세스: {num_workers} core(s)")
 
     final_vectors = []
     metadata_list = []
@@ -270,7 +361,7 @@ def build_apple_dataset():
                     "title": result["title"],
                     "artist": result["artist"],
                     "preview_url": result["preview_url"],
-                    "genre_id": result["genre_id"],
+                    "genre_name": result["genre_name"],
                     "release_date": result["release_date"]
                 })
                 final_vectors.append(result["vector"])
@@ -284,9 +375,9 @@ def build_apple_dataset():
         json.dump(metadata_list, f, indent=2, ensure_ascii=False)
 
     print("\n=======================================")
-    print("✅ Apple DB 생성 완료!")
-    print(f"📦 벡터 개수: {len(final_vectors)} tracks")
-    print(f"📌 저장 위치: {VECTORS_OUT}")
+    print("Apple DB 생성 완료!")
+    print(f"벡터 개수: {len(final_vectors)} tracks")
+    print(f"저장 위치: {VECTORS_OUT}")
     print("=======================================")
 
 
