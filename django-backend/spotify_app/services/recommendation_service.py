@@ -5,18 +5,16 @@ import numpy as np
 
 from .apple_client import fetch_apple_track_metadata, download_preview, extract_features_from_audio, build_metadata_vector, combine_feature_vectors
 from spotify_app.engines.HNSW_Engine import HNSWRecommender
+from csv_tools.csv_manager import save_features_to_csv
 
 
 def run_recommendation(track_ids):
-    """
-    track_ids: 사용자가 입력한 trackId 배열
-    return: Apple top-10 추천
-    """
+
     final_vectors = []
     metadatas = []
 
     for tid in track_ids:
-
+        
         # 1) 기본 메타데이터 추출
         meta = fetch_apple_track_metadata(tid)
         if not meta or "preview_url" not in meta:
@@ -46,6 +44,13 @@ def run_recommendation(track_ids):
             final_vec = combine_feature_vectors(audio_vec, meta_vec)
         except Exception:
             continue
+        
+        # (features.csv에 저장)
+        save_features_to_csv(
+            title=meta["title"],
+            artist=meta["artist"],
+            final_vec=final_vec
+        )
 
         final_vectors.append(final_vec)
 

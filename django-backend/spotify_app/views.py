@@ -4,6 +4,7 @@ from rest_framework import status
 
 from spotify_app.services.recommendation_service import run_recommendation
 from spotify_app.services.apple_client import get_track_id_by_name, parse_artist_title_list
+from csv_tools.csv_manager import save_song_to_csv
 
 from dotenv import load_dotenv
 from django.conf import settings
@@ -22,18 +23,14 @@ ACTIVAE_MODE = getattr(settings, "ACTIVAE_MODE", "A")
 # B 모드: runserver + 브라우저 GET → 자동 추천 실행 (테스트용)
 # ============================================================
 class AppleRecommendView(APIView):
-    """
-    테스트용:
-    - runserver 후 /api/spotify/apple-test/ 접속하면
-      기본 track_id 3개로 자동 추천 실행
-    """
+
     def get(self, request):
 
         # 테스트용 기본 sample 3개
         sample = [
-            ["NewJeans", "Super Shy"],
-            ["The Weeknd", "Blinding Lights"],
-            ["Coldplay", "Hymn For The Weekend"]
+            ["아이유", "밤편지"],
+            ["임창정", "소주한잔"],
+            ["Dean", "instagram"]
         ]
 
         # ================================
@@ -57,6 +54,16 @@ class AppleRecommendView(APIView):
         # ================
         results, mood_keywords = run_recommendation(track_ids)
 
+        # songs.csv에 저장
+        for song in results:
+            save_song_to_csv({
+                "title": song.get("title", ""),
+                "artist": song.get("artist", ""),
+                "genre": "Recommended",
+                "bpm": 0,
+                "mood": "Recommended"
+            })
+
         return Response({
             "message": "Apple 테스트 추천 실행 완료",
             "input_ids": sample,
@@ -75,24 +82,25 @@ class AppleRecommendView(APIView):
 # ============================================================
 # A 모드: Flutter POST → URL 목록 → track_id 추출 → 추천
 # ============================================================
-class UrlProcessView(APIView):
-    """
-    Flutter에서 여러 URL을 받아
-    - Spotify / Apple Music URL → track_id 추출
-    - Apple 추천 알고리즘 실행
-    """
+class AppleUrlProcessView(APIView):
+
     def get(self, request):
         return Response({"msg": "GET received. 이 Endpoint는 POST용입니다."})
 
     def post(self, request):
 
-        # A 모드에서만 실행
+        # ---------------------------------------------------
+        # 0) 모드 체크
+        # ---------------------------------------------------
         if ACTIVAE_MODE != "A":
             return Response(
                 {"error": "현재 모드는 A(Flutter POST 모드)가 아닙니다."},
                 status=400
             )
 
+        # ---------------------------------------------------
+        # 1) URL 리스트 추출
+        # ---------------------------------------------------
         input_info = request.data.get("urls", [])
 
         if not input_info:
@@ -100,33 +108,50 @@ class UrlProcessView(APIView):
                 {"error": "URL 리스트가 비어있습니다."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        # ---------------------------------------------------
-        # 1) 입력 문자열 parsing -> ["아티스트", "제목"] 형태로 전환
-        # ---------------------------------------------------
-        parsed_track_info = parse_artist_title_list(input_info)
-
 
         # ---------------------------------------------------
-        # 2) track_id 추출 단계
+        # 2) Artist-Title parsing
+        # ---------------------------------------------------
+        try:
+            parsed_track_info = parse_artist_title_list(input_info)
+        except Exception as e:
+            return Response(
+                {"error": f"artist-title parsing 오류: {str(e)}"},
+                status=400
+            )
+
+        # ---------------------------------------------------
+        # 3) TrackId 검색
         # ---------------------------------------------------
         track_ids = []
+        print("\ntrack_id 검색 시작")
+
         for artist, title in parsed_track_info:
             term = f"{artist} {title}"
-            tid = get_track_id_by_name(term)
+            print(f"  > 검색 term = '{term}'")
+
+            try:
+                tid = get_track_id_by_name(term)
+                print("검색 결과 tid =", tid)
+            except Exception as e:
+                print("get_track_id_by_name 실패:", e)
+                continue
+
             if tid:
                 track_ids.append(tid)
+
+        print("최종 track_ids =", track_ids)
 
         if not track_ids:
             return Response(
                 {"error": "기본 테스트 곡들의 trackId 검색 실패"},
                 status=400
             )
-        
 
         # ---------------------------------------------------
-        # 3) Apple 추천 실행
+        # 4) Apple 추천 실행
         # ---------------------------------------------------
+        print("\nApple 추천 실행 시작...")
         try:
             results, mood_keywords = run_recommendation(track_ids)
         except Exception as e:
@@ -135,12 +160,34 @@ class UrlProcessView(APIView):
                 status=500
             )
 
+        print("\n추천 결과:")
+        print("results =", results)
+        print("mood_keywords =", mood_keywords)
 
         # ---------------------------------------------------
-        # 4) AppleRecommendView와 동일한 JSON 구조로 반환
+        # 5) songs.csv 저장
         # ---------------------------------------------------
+        print("\nsongs.csv 저장 시작")
+        for song in results:
+            try:
+                save_song_to_csv({
+                    "title": song.get("title", ""),
+                    "artist": song.get("artist", ""),
+                    "genre": "Recommended",
+                    "bpm": 0,
+                    "mood": "Recommended"
+                })
+                print("저장 완료:", song.get("title"))
+            except Exception as e:
+                print("songs.csv 저장 실패:", e)
+
+        # ---------------------------------------------------
+        # 6) 응답 반환
+        # ---------------------------------------------------
+        print("\nAPI 최종 응답 반환")
+
         return Response({
-            "message": "Apple 테스트 추천 실행 완료",   
+            "message": "Apple 테스트 추천 실행 완료",
             "input_ids": track_ids,
             "mood_keywords": mood_keywords,
             "recommended": results

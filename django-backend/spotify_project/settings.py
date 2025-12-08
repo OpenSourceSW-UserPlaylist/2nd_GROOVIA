@@ -133,11 +133,6 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-# --- Spotify Feature Weights ---
-SPOTIFY_NUMERIC_WEIGHT = 1.0
-SPOTIFY_GENRE_WEIGHT = 1.0
-
-
 # 실행 모드 선택
 ACTIVAE_MODE = "A"  # A → Flutter 요청 기반 (기본)
                     # B → 서버 시작 즉시 자동 실행
