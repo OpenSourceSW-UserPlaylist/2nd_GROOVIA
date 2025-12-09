@@ -12,4 +12,4 @@
 4. 음원 분석 로직 구현: Librosa 라이브러리를 활용하여 BPM, MFCC, Chroma, Spectral Centroid 등의 음원 특징을 추출
 5. 유사 곡 추천 알고리즘 적용: 추출된 특징값을 기반으로 유사도 계산을 수행하여 가장 유사한 10곡을 추천
 6. 추천 결과 데이터 처리: 추천된 10곡의 곡명, 가수명, 앨범 커버 정보를 CSV 형식으로 저장하고 Django에서 관리
-9. 프론트엔드 전달 및 UI 출력: Django에서 추천 결과를 JSON 형태로 Flutter에 전달하며, Flutter는 이를 리스트 UI로 시각화하여 출력
+7. 프론트엔드 전달 및 UI 출력: Django에서 추천 결과를 JSON 형태로 Flutter에 전달하며, Flutter는 이를 리스트 UI로 시각화하여 출력
