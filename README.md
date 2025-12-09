@@ -41,8 +41,8 @@ Librosa로 **BPM, MFCC, Chroma** 등 오디오 특징을 추출해
 사용자는 다음과 같은 형식으로 입력합니다:
 
 ```
-Love Dive – IVE  
-Seven – Jungkook
+IVE, Love Dive  
+Jungkook, Seven
 ```
 
 “추천 받기” 버튼 클릭 시 분석이 시작됩니다.
