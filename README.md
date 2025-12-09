@@ -37,7 +37,7 @@ Librosa로 **BPM, MFCC, Chroma** 등 오디오 특징을 추출해
 
 ## 사용자 가이드
 
-### 🎵 1. 곡 입력
+### 1. 곡 입력
 사용자는 다음과 같은 형식으로 입력합니다:
 
 ```
@@ -49,7 +49,7 @@ Jungkook, Seven
 
 ---
 
-### 🧪 2. 분석 중 화면
+### 2. 분석 중 화면
 - Django 백엔드가 iTunes API 호출  
 - previewUrl 확보  
 - Librosa로 오디오 분석(BPM, MFCC 등)  
@@ -60,7 +60,7 @@ Jungkook, Seven
 
 ---
 
-### 📑 3. 결과 화면
+### 3. 결과 화면
 - 추천 음악 리스트  
 - 감성 카테고리(신나는/잔잔한/로맨틱 등)  
 - BPM/무드 등 분석 정보  
@@ -68,19 +68,19 @@ Jungkook, Seven
 
 ---
 
-### 📚 4. 라이브러리 화면
+### 4. 라이브러리 화면
 이전에 추천받은 곡들을 저장하고 확인할 수 있습니다.
 
 ---
 
 ## 개발자 가이드
 
-### 🖥 Frontend (Flutter)
+### Frontend (Flutter)
 - Flutter 3.x  
 - Dart  
 - http, provider(or bloc), audioplayers 패키지 사용  
 
-### 🔧 Backend (Django)
+### Backend (Django)
 - Django 4.x  
 - Django REST Framework  
 - Librosa / numpy / scipy  
@@ -136,7 +136,7 @@ Librosa로 다음 특징을 추출합니다:
 
 ## API 명세
 
-### 🎯 POST `/api/analyze/`
+### POST `/api/analyze/`
 
 #### Request
 ```json
